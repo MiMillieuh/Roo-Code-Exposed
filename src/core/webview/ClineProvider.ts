@@ -84,6 +84,7 @@ import { getWorkspacePath } from "../../utils/path"
 import { OrganizationAllowListViolationError } from "../../utils/errors"
 
 import { setPanel } from "../../activate/registerCommands"
+import type { WebServer } from "../../server/WebServer"
 
 import { t } from "../../i18n"
 
@@ -148,6 +149,7 @@ export class ClineProvider
 	private taskEventListeners: WeakMap<Task, Array<() => void>> = new WeakMap()
 	private currentWorkspacePath: string | undefined
 	private _disposed = false
+	private _webServer?: WebServer
 
 	private recentTasksCache?: string[]
 	public readonly taskHistoryStore: TaskHistoryStore
@@ -1169,6 +1171,10 @@ export class ClineProvider
 		return task
 	}
 
+	public setWebServer(webServer: WebServer | undefined): void {
+		this._webServer = webServer
+	}
+
 	public async postMessageToWebview(message: ExtensionMessage) {
 		if (this._disposed) {
 			return
@@ -1178,6 +1184,13 @@ export class ClineProvider
 			await this.view?.webview.postMessage(message)
 		} catch {
 			// View disposed, drop message silently
+		}
+
+		// Also broadcast to any connected web browser clients
+		try {
+			this._webServer?.broadcastToClients(message)
+		} catch {
+			// Ignore broadcast errors
 		}
 	}
 
@@ -1374,6 +1387,14 @@ export class ClineProvider
 
 		const messageDisposable = webview.onDidReceiveMessage(onReceiveMessage)
 		this.webviewDisposables.push(messageDisposable)
+	}
+
+	/**
+	 * Handle a message received from a web browser client (via WebSocket).
+	 * This routes the message through the same handler as the VSCode webview.
+	 */
+	public async handleMessageFromWebServer(message: WebviewMessage): Promise<void> {
+		await webviewMessageHandler(this, message, this.marketplaceManager)
 	}
 
 	/**

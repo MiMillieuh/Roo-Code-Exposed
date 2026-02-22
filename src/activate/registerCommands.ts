@@ -1,3 +1,4 @@
+import * as os from "os"
 import * as vscode from "vscode"
 import delay from "delay"
 
@@ -14,6 +15,7 @@ import { CodeIndexManager } from "../services/code-index/manager"
 import { importSettingsWithFeedback } from "../core/config/importExport"
 import { MdmService } from "../services/mdm/MdmService"
 import { t } from "../i18n"
+import { WebServer } from "../server/WebServer"
 
 /**
  * Helper to get the visible ClineProvider instance or log if not found.
@@ -59,6 +61,7 @@ export type RegisterCommandOptions = {
 	context: vscode.ExtensionContext
 	outputChannel: vscode.OutputChannel
 	provider: ClineProvider
+	webServer?: WebServer
 }
 
 export const registerCommands = (options: RegisterCommandOptions) => {
@@ -70,7 +73,7 @@ export const registerCommands = (options: RegisterCommandOptions) => {
 	}
 }
 
-const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOptions): Record<CommandId, any> => ({
+const getCommandsMap = ({ context, outputChannel, provider, webServer }: RegisterCommandOptions): Record<CommandId, any> => ({
 	activationCompleted: () => {},
 	cloudButtonClicked: () => {
 		const visibleProvider = getVisibleProviderOrLog(outputChannel)
@@ -117,6 +120,44 @@ const getCommandsMap = ({ context, outputChannel, provider }: RegisterCommandOpt
 		visibleProvider.postMessageToWebview({ type: "action", action: "settingsButtonClicked" })
 		// Also explicitly post the visibility message to trigger scroll reliably
 		visibleProvider.postMessageToWebview({ type: "action", action: "didBecomeVisible" })
+	},
+	startWebServer: async () => {
+		if (!webServer) {
+			vscode.window.showErrorMessage("Web server is not available.")
+			return
+		}
+
+		if (webServer.isRunning()) {
+			try {
+				await webServer.stop()
+				vscode.window.showInformationMessage("Roo Code web server stopped.")
+			} catch (error) {
+				vscode.window.showErrorMessage(`Failed to stop web server: ${error}`)
+			}
+		} else {
+			try {
+				await webServer.start()
+				// Get local IP addresses to show the user
+				const interfaces = os.networkInterfaces()
+				const addresses: string[] = ["http://localhost:30000"]
+				for (const name of Object.keys(interfaces)) {
+					for (const iface of (interfaces[name] ?? [])) {
+						if (iface.family === "IPv4" && !iface.internal) {
+							addresses.push(`http://${iface.address}:30000`)
+						}
+					}
+				}
+				const selection = await vscode.window.showInformationMessage(
+					`Roo Code web server started! Access it at: ${addresses.join(", ")}`,
+					"Open in Browser",
+				)
+				if (selection === "Open in Browser") {
+					await vscode.env.openExternal(vscode.Uri.parse("http://localhost:30000"))
+				}
+			} catch (error) {
+				vscode.window.showErrorMessage(`Failed to start web server: ${error}`)
+			}
+		}
 	},
 	historyButtonClicked: () => {
 		const visibleProvider = getVisibleProviderOrLog(outputChannel)

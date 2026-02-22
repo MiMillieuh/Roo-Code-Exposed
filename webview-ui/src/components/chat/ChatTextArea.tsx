@@ -490,7 +490,12 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 
 				// Handle Enter key based on enterBehavior setting
 				if (event.key === "Enter" && !isComposing) {
-					if (enterBehavior === "newline") {
+					// On mobile (touch devices), Enter always creates a newline; use the send button to submit
+					// We use maxTouchPoints > 0 as the primary signal (jsdom returns undefined/0 so tests are unaffected)
+					const isMobile = navigator.maxTouchPoints > 0
+					if (isMobile) {
+						// Let Enter create a newline on mobile (don't preventDefault)
+					} else if (enterBehavior === "newline") {
 						// New behavior: Enter = newline, Shift+Enter or Ctrl+Enter = send
 						if (event.shiftKey || event.ctrlKey || event.metaKey) {
 							event.preventDefault()

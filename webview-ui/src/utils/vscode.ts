@@ -10,7 +10,12 @@ import { WebviewMessage } from "@roo/WebviewMessage"
  * This utility also enables webview code to be run in a web browser-based
  * dev server by using native web browser features that mock the functionality
  * enabled by acquireVsCodeApi.
+ *
+ * When running in a web browser (not in VSCode), this wrapper uses a WebSocket
+ * connection to communicate with the extension host running on port 30000.
+ * The WebSocket is shared with the toolbar script injected by the web server.
  */
+
 class VSCodeAPIWrapper {
 	private readonly vsCodeApi: WebviewApi<unknown> | undefined
 
@@ -20,13 +25,16 @@ class VSCodeAPIWrapper {
 		if (typeof acquireVsCodeApi === "function") {
 			this.vsCodeApi = acquireVsCodeApi()
 		}
+		// When running in a browser, the toolbar script (injected by WebServer.ts)
+		// already creates and manages the WebSocket connection via window.__rooWebSocket.
+		// We reuse that connection instead of creating a new one.
 	}
 
 	/**
 	 * Post a message (i.e. send arbitrary data) to the owner of the webview.
 	 *
-	 * @remarks When running webview code inside a web browser, postMessage will instead
-	 * log the given message to the console.
+	 * @remarks When running webview code inside a web browser, postMessage will send
+	 * the message via WebSocket to the extension host.
 	 *
 	 * @param message Arbitrary data (must be JSON serializable) to send to the extension context.
 	 */
@@ -34,7 +42,11 @@ class VSCodeAPIWrapper {
 		if (this.vsCodeApi) {
 			this.vsCodeApi.postMessage(message)
 		} else {
-			console.log(message)
+			// Use the shared WebSocket from the toolbar script
+			const rooWs = (window as any).__rooWebSocket
+			if (rooWs) {
+				rooWs.send(message)
+			}
 		}
 	}
 

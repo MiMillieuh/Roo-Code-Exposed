@@ -39,6 +39,7 @@ import { MdmService } from "./services/mdm/MdmService"
 import { migrateSettings } from "./utils/migrateSettings"
 import { autoImportSettings } from "./utils/autoImportSettings"
 import { API } from "./extension/api"
+import { WebServer } from "./server/WebServer"
 
 import {
 	handleUri,
@@ -61,6 +62,7 @@ import { flushModels, initializeModelCacheRefresh, refreshModels } from "./api/p
 let outputChannel: vscode.OutputChannel
 let extensionContext: vscode.ExtensionContext
 let cloudService: CloudService | undefined
+let webServer: WebServer | undefined
 
 let authStateChangedHandler: ((data: { state: AuthState; previousState: AuthState }) => Promise<void>) | undefined
 let settingsUpdatedHandler: (() => void) | undefined
@@ -315,7 +317,54 @@ export async function activate(context: vscode.ExtensionContext) {
 		)
 	}
 
-	registerCommands({ context, outputChannel, provider })
+	// Create the web server and wire it to the provider
+	webServer = new WebServer(context.extensionUri, outputChannel)
+
+	// Set up the message handler: messages from browser clients are routed to the provider
+	webServer.setMessageHandler(async (message) => {
+		const visibleProvider = ClineProvider.getVisibleInstance() ?? provider
+		await visibleProvider.handleMessageFromWebServer(message)
+	})
+
+	// Set up the toolbar action handler: toolbar button clicks from the browser
+	webServer.setToolbarActionHandler(async (action) => {
+		const visibleProvider = ClineProvider.getVisibleInstance() ?? provider
+		switch (action) {
+			case "newTask":
+				await visibleProvider.removeClineFromStack()
+				await visibleProvider.refreshWorkspace()
+				await visibleProvider.postMessageToWebview({ type: "action", action: "chatButtonClicked" })
+				await visibleProvider.postMessageToWebview({ type: "action", action: "focusInput" })
+				break
+			case "history":
+				await visibleProvider.postMessageToWebview({ type: "action", action: "historyButtonClicked" })
+				break
+			case "marketplace":
+				await visibleProvider.postMessageToWebview({ type: "action", action: "marketplaceButtonClicked" })
+				break
+			case "settings":
+				await visibleProvider.postMessageToWebview({ type: "action", action: "settingsButtonClicked" })
+				await visibleProvider.postMessageToWebview({ type: "action", action: "didBecomeVisible" })
+				break
+			case "cloud":
+				await visibleProvider.postMessageToWebview({ type: "action", action: "cloudButtonClicked" })
+				break
+			default:
+				outputChannel.appendLine(`[WebServer] Unknown toolbar action: ${action}`)
+		}
+	})
+
+	// Register the web server with the provider so it can broadcast messages
+	provider.setWebServer(webServer)
+
+	// Clean up web server when extension is deactivated
+	context.subscriptions.push({
+		dispose: () => {
+			webServer?.stop().catch(() => {})
+		},
+	})
+
+	registerCommands({ context, outputChannel, provider, webServer })
 
 	/**
 	 * We use the text document content provider API to show the left side for diff
@@ -449,4 +498,12 @@ export async function deactivate() {
 	await McpServerManager.cleanup(extensionContext)
 	TelemetryService.instance.shutdown()
 	TerminalRegistry.cleanup()
+
+	if (webServer?.isRunning()) {
+		try {
+			await webServer.stop()
+		} catch {
+			// Ignore errors during deactivation
+		}
+	}
 }
