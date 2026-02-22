@@ -1175,6 +1175,10 @@ export class ClineProvider
 		this._webServer = webServer
 	}
 
+	public getWebServer(): WebServer | undefined {
+		return this._webServer
+	}
+
 	public async postMessageToWebview(message: ExtensionMessage) {
 		if (this._disposed) {
 			return
@@ -2195,6 +2199,8 @@ export class ClineProvider
 			historyPreviewCollapsed,
 			reasoningBlockCollapsed,
 			enterBehavior,
+			webServerPort,
+			webServerPassword,
 			cloudUserInfo,
 			cloudIsAuthenticated,
 			sharingEnabled,
@@ -2321,6 +2327,8 @@ export class ClineProvider
 			historyPreviewCollapsed: historyPreviewCollapsed ?? false,
 			reasoningBlockCollapsed: reasoningBlockCollapsed ?? true,
 			enterBehavior: enterBehavior ?? "send",
+			webServerPort,
+			webServerPassword,
 			cloudUserInfo,
 			cloudIsAuthenticated: cloudIsAuthenticated ?? false,
 			cloudAuthSkipModel: this.context.globalState.get<boolean>("roo-auth-skip-model") ?? false,

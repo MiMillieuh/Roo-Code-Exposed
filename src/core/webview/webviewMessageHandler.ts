@@ -662,15 +662,33 @@ export const webviewMessageHandler = async (
 							...(value as Record<ExperimentId, boolean>),
 						}
 					} else if (key === "customSupportPrompts") {
-						if (!value) {
+							if (!value) {
+								continue
+							}
+						} else if (key === "webServerPort" || key === "webServerPassword") {
+							// Reconfigure and restart the web server if it's running
+							const webServer = provider.getWebServer()
+							if (webServer) {
+								const wasRunning = webServer.isRunning()
+								if (wasRunning) {
+									await webServer.stop()
+								}
+								// Apply the new value to the proxy first so configure reads the latest
+								await provider.contextProxy.setValue(key as keyof RooCodeSettings, newValue)
+								const port = provider.contextProxy.getValue("webServerPort") as number | undefined
+								const password = provider.contextProxy.getValue("webServerPassword") as string | undefined
+								webServer.configure(port ?? 30000, password ?? "")
+								if (wasRunning) {
+									await webServer.start()
+								}
+							}
 							continue
 						}
+	
+						await provider.contextProxy.setValue(key as keyof RooCodeSettings, newValue)
 					}
-
-					await provider.contextProxy.setValue(key as keyof RooCodeSettings, newValue)
-				}
-
-				await provider.postStateToWebview()
+	
+					await provider.postStateToWebview()
 			}
 
 			break

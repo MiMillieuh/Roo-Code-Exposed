@@ -1,8 +1,8 @@
 {
 	"name": "roo-cline",
-	"displayName": "%extension.displayName%",
+	"displayName": "Roo Code Exposed",
 	"description": "%extension.description%",
-	"publisher": "RooVeterinaryInc",
+	"publisher": "MiMillie",
 	"version": "3.50.4",
 	"icon": "assets/icons/icon.png",
 	"galleryBanner": {
@@ -14,7 +14,7 @@
 		"node": "20.19.2"
 	},
 	"author": {
-		"name": "Roo Code"
+		"name": "Roo Code and MiMillie"
 	},
 	"repository": {
 		"type": "git",

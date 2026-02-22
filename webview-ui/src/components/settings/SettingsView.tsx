@@ -29,6 +29,7 @@ import {
 	ArrowLeft,
 	GitCommitVertical,
 	GraduationCap,
+	Network,
 } from "lucide-react"
 
 import {
@@ -78,6 +79,7 @@ import PromptsSettings from "./PromptsSettings"
 import { SlashCommandsSettings } from "./SlashCommandsSettings"
 import { SkillsSettings } from "./SkillsSettings"
 import { UISettings } from "./UISettings"
+import { WebServerSettings } from "./WebServerSettings"
 import ModesView from "../modes/ModesView"
 import McpView from "../mcp/McpView"
 import { WorktreesView } from "../worktrees/WorktreesView"
@@ -109,6 +111,7 @@ export const sectionNames = [
 	"worktrees",
 	"prompts",
 	"ui",
+	"webServer",
 	"experimental",
 	"language",
 	"about",
@@ -200,6 +203,8 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		openRouterImageGenerationSelectedModel,
 		reasoningBlockCollapsed,
 		enterBehavior,
+		webServerPort,
+		webServerPassword,
 		includeCurrentTime,
 		includeCurrentCost,
 		maxGitStatusFiles,
@@ -413,6 +418,8 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 					includeTaskHistoryInEnhance: includeTaskHistoryInEnhance ?? true,
 					reasoningBlockCollapsed: reasoningBlockCollapsed ?? true,
 					enterBehavior: enterBehavior ?? "send",
+					webServerPort: webServerPort ?? 30000,
+					webServerPassword: webServerPassword ?? "",
 					includeCurrentTime: includeCurrentTime ?? true,
 					includeCurrentCost: includeCurrentCost ?? true,
 					maxGitStatusFiles: maxGitStatusFiles ?? 0,
@@ -521,6 +528,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 			{ id: "prompts", icon: MessageSquare },
 			{ id: "worktrees", icon: GitBranch },
 			{ id: "ui", icon: Glasses },
+			{ id: "webServer", icon: Network },
 			{ id: "experimental", icon: FlaskConical },
 			{ id: "language", icon: Globe },
 			{ id: "about", icon: Info },
@@ -892,6 +900,15 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 							<UISettings
 								reasoningBlockCollapsed={reasoningBlockCollapsed ?? true}
 								enterBehavior={enterBehavior ?? "send"}
+								setCachedStateField={setCachedStateField}
+							/>
+						)}
+
+						{/* Web Server Section */}
+						{renderTab === "webServer" && (
+							<WebServerSettings
+								webServerPort={webServerPort}
+								webServerPassword={webServerPassword}
 								setCachedStateField={setCachedStateField}
 							/>
 						)}

@@ -126,6 +126,10 @@ export interface ExtensionStateContextType extends ExtensionState {
 	setReasoningBlockCollapsed: (value: boolean) => void
 	enterBehavior?: "send" | "newline"
 	setEnterBehavior: (value: "send" | "newline") => void
+	webServerPort?: number
+	setWebServerPort: (value: number | undefined) => void
+	webServerPassword?: string
+	setWebServerPassword: (value: string | undefined) => void
 	autoCondenseContext: boolean
 	setAutoCondenseContext: (value: boolean) => void
 	autoCondenseContextPercent: number
@@ -586,6 +590,10 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 			setState((prevState) => ({ ...prevState, reasoningBlockCollapsed: value })),
 		enterBehavior: state.enterBehavior ?? "send",
 		setEnterBehavior: (value) => setState((prevState) => ({ ...prevState, enterBehavior: value })),
+		webServerPort: state.webServerPort,
+		setWebServerPort: (value) => setState((prevState) => ({ ...prevState, webServerPort: value })),
+		webServerPassword: state.webServerPassword,
+		setWebServerPassword: (value) => setState((prevState) => ({ ...prevState, webServerPassword: value })),
 		setHasOpenedModeSelector: (value) => setState((prevState) => ({ ...prevState, hasOpenedModeSelector: value })),
 		setAutoCondenseContext: (value) => setState((prevState) => ({ ...prevState, autoCondenseContext: value })),
 		setAutoCondenseContextPercent: (value) =>

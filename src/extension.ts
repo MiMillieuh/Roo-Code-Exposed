@@ -320,6 +320,11 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Create the web server and wire it to the provider
 	webServer = new WebServer(context.extensionUri, outputChannel)
 
+	// Configure port and basic auth from settings
+	const webServerPort = provider.contextProxy.getValue("webServerPort") as number | undefined
+	const webServerPassword = provider.contextProxy.getValue("webServerPassword") as string | undefined
+	webServer.configure(webServerPort ?? 30000, webServerPassword ?? "")
+
 	// Set up the message handler: messages from browser clients are routed to the provider
 	webServer.setMessageHandler(async (message) => {
 		const visibleProvider = ClineProvider.getVisibleInstance() ?? provider

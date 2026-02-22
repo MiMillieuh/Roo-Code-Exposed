@@ -207,6 +207,16 @@ export const globalSettingsSchema = z.object({
 	 * @default "send"
 	 */
 	enterBehavior: z.enum(["send", "newline"]).optional(),
+	/**
+	 * Port for the web server. Defaults to 30000.
+	 * @default 30000
+	 */
+	webServerPort: z.number().int().min(1024).max(65535).optional(),
+	/**
+	 * Basic auth password for the web server. Empty string means no auth.
+	 * Stored as a secret.
+	 */
+	webServerPassword: z.string().optional(),
 	profileThresholds: z.record(z.string(), z.number()).optional(),
 	hasOpenedModeSelector: z.boolean().optional(),
 	lastModeExportPath: z.string().optional(),
@@ -284,6 +294,7 @@ export const SECRET_STATE_KEYS = [
 // Global secrets that are part of GlobalSettings (not ProviderSettings)
 export const GLOBAL_SECRET_KEYS = [
 	"openRouterImageApiKey", // For image generation
+	"webServerPassword", // Basic auth password for the web server
 ] as const
 
 // Type for the actual secret storage keys

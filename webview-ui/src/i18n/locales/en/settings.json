@@ -39,6 +39,7 @@
 		"slashCommands": "Slash Commands",
 		"prompts": "Prompts",
 		"ui": "UI",
+		"webServer": "Web Server",
 		"experimental": "Experimental",
 		"language": "Language",
 		"about": "About Roo Code"
@@ -163,6 +164,17 @@
 		"requireCtrlEnterToSend": {
 			"label": "Require {{primaryMod}}+Enter to send messages",
 			"description": "When enabled, you must press {{primaryMod}}+Enter to send messages instead of just Enter"
+		}
+	},
+	"webServer": {
+		"port": {
+			"label": "Web Server Port",
+			"description": "Port for the web server (1024–65535). Default is 30000. Restart the server after changing."
+		},
+		"password": {
+			"label": "Web Server Password (Basic Auth)",
+			"placeholder": "Leave empty to disable authentication",
+			"description": "Optional password to protect the web server with HTTP Basic Auth. Leave empty to allow unauthenticated access."
 		}
 	},
 	"prompts": {

@@ -136,24 +136,25 @@ const getCommandsMap = ({ context, outputChannel, provider, webServer }: Registe
 			}
 		} else {
 			try {
-				await webServer.start()
-				// Get local IP addresses to show the user
-				const interfaces = os.networkInterfaces()
-				const addresses: string[] = ["http://localhost:30000"]
-				for (const name of Object.keys(interfaces)) {
-					for (const iface of (interfaces[name] ?? [])) {
-						if (iface.family === "IPv4" && !iface.internal) {
-							addresses.push(`http://${iface.address}:30000`)
+					await webServer.start()
+					// Get local IP addresses to show the user
+					const port = webServer.getPort()
+					const interfaces = os.networkInterfaces()
+					const addresses: string[] = [`http://localhost:${port}`]
+					for (const name of Object.keys(interfaces)) {
+						for (const iface of (interfaces[name] ?? [])) {
+							if (iface.family === "IPv4" && !iface.internal) {
+								addresses.push(`http://${iface.address}:${port}`)
+							}
 						}
 					}
-				}
-				const selection = await vscode.window.showInformationMessage(
-					`Roo Code web server started! Access it at: ${addresses.join(", ")}`,
-					"Open in Browser",
-				)
-				if (selection === "Open in Browser") {
-					await vscode.env.openExternal(vscode.Uri.parse("http://localhost:30000"))
-				}
+					const selection = await vscode.window.showInformationMessage(
+						`Roo Code web server started! Access it at: ${addresses.join(", ")}`,
+						"Open in Browser",
+					)
+					if (selection === "Open in Browser") {
+						await vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${port}`))
+					}
 			} catch (error) {
 				vscode.window.showErrorMessage(`Failed to start web server: ${error}`)
 			}

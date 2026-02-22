@@ -7,7 +7,7 @@ import * as vscode from "vscode"
 import type { ExtensionMessage } from "@roo-code/types"
 import type { WebviewMessage } from "../shared/WebviewMessage"
 
-const WEB_SERVER_PORT = 30000
+const DEFAULT_WEB_SERVER_PORT = 30000
 
 const MIME_TYPES: Record<string, string> = {
 	".html": "text/html",
@@ -50,10 +50,21 @@ export class WebServer {
 	private toolbarActionHandler: WebServerToolbarActionHandler | null = null
 	private extensionUri: vscode.Uri
 	private outputChannel: vscode.OutputChannel
+	private port: number = DEFAULT_WEB_SERVER_PORT
+	private password: string = ""
 
 	constructor(extensionUri: vscode.Uri, outputChannel: vscode.OutputChannel) {
 		this.extensionUri = extensionUri
 		this.outputChannel = outputChannel
+	}
+
+	public getPort(): number {
+		return this.port
+	}
+
+	public configure(port: number, password: string): void {
+		this.port = port > 0 ? port : DEFAULT_WEB_SERVER_PORT
+		this.password = password ?? ""
 	}
 
 	public setMessageHandler(handler: WebServerMessageHandler): void {
@@ -134,9 +145,9 @@ export class WebServer {
 		})
 
 		await new Promise<void>((resolve, reject) => {
-			this.httpServer!.listen(WEB_SERVER_PORT, "0.0.0.0", () => {
+			this.httpServer!.listen(this.port, "0.0.0.0", () => {
 				this.outputChannel.appendLine(
-					`[WebServer] Roo Code web server started on http://0.0.0.0:${WEB_SERVER_PORT}`,
+					`[WebServer] Roo Code web server started on http://0.0.0.0:${this.port}`,
 				)
 				resolve()
 			})
@@ -179,6 +190,30 @@ export class WebServer {
 		this.outputChannel.appendLine("[WebServer] Server stopped.")
 	}
 
+	private checkBasicAuth(req: http.IncomingMessage, res: http.ServerResponse): boolean {
+		if (!this.password) {
+			return true // No auth required
+		}
+
+		const authHeader = req.headers["authorization"]
+		if (authHeader && authHeader.startsWith("Basic ")) {
+			const encoded = authHeader.slice("Basic ".length)
+			const decoded = Buffer.from(encoded, "base64").toString("utf-8")
+			// Accept any username, only check password
+			const colonIdx = decoded.indexOf(":")
+			const providedPassword = colonIdx >= 0 ? decoded.slice(colonIdx + 1) : decoded
+			if (providedPassword === this.password) {
+				return true
+			}
+		}
+
+		// Prompt browser to show login dialog
+		res.setHeader("WWW-Authenticate", 'Basic realm="Roo Code"')
+		res.writeHead(401, { "Content-Type": "text/plain" })
+		res.end("Unauthorized")
+		return false
+	}
+
 	private handleRequest(
 		req: http.IncomingMessage,
 		res: http.ServerResponse,
@@ -196,6 +231,11 @@ export class WebServer {
 		if (req.method === "OPTIONS") {
 			res.writeHead(204)
 			res.end()
+			return
+		}
+
+		// Enforce basic auth if a password is configured
+		if (!this.checkBasicAuth(req, res)) {
 			return
 		}
 
