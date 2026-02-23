@@ -210,6 +210,23 @@
 		@apply underline;
 	}
 
+	/* Virtuoso item list styling for dark theme support */
+	[virtuoso-scroller] {
+		background-color: var(--color-vscode-editor-background);
+		color: var(--color-vscode-editor-foreground);
+	}
+	
+	[data-testid="virtuoso-item-list"] {
+		background-color: var(--color-vscode-editor-background);
+		color: var(--color-vscode-editor-foreground);
+	}
+	
+	/* Ensure virtuoso list items have proper theming */
+	.virtuoso-item-list {
+		background-color: var(--color-vscode-editor-background);
+		color: var(--color-vscode-editor-foreground);
+	}
+
 	/* Custom smooth bounce animation for Roo hero */
 	@keyframes smooth-bounce {
 		0% {
